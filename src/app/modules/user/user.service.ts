@@ -2,6 +2,7 @@ import { Request } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../shared/prisma";
 import { fileUploader } from "../../helper/fileUploader";
+import { env } from "process";
 
 const createPatient = async (req: Request) => {
   if (req.file) {
@@ -11,7 +12,7 @@ const createPatient = async (req: Request) => {
 
   const hassedPassword = await bcrypt.hash(
     req.body.password,
-    Number(process.env.BCRYPT_SALT_ROUNDS)
+    Number(env.BCRYPT_SALT_ROUNDS)
   );
   const result = await prisma.$transaction(async (tnx) => {
     await tnx.user.create({
