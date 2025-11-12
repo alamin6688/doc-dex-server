@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../shared/prisma";
 import { fileUploader } from "../../helper/fileUploader";
 import { env } from "process";
+import { count } from "console";
 
 const createPatient = async (req: Request) => {
   if (req.file) {
@@ -31,14 +32,37 @@ const createPatient = async (req: Request) => {
 const getAllFromDB = async ({
   page,
   limit,
+  searchTerm,
+  sortBy,
+  sortOrder,
 }: {
   page: number;
   limit: number;
+  searchTerm?: any;
+  sortBy: any;
+  sortOrder: any;
 }) => {
-  const skip = (page - 1) * limit;
+  const pageNumber = page || 1;
+  const limitNumber = page || 10;
+  const skip = (pageNumber - 1) * limitNumber;
   const result = await prisma.user.findMany({
     skip,
-    take: limit,
+    take: limitNumber,
+
+    where: {
+      email: {
+        contains: searchTerm,
+        mode: "insensitive",
+      },
+    },
+    orderBy:
+      sortBy && sortOrder
+        ? {
+            [sortBy]: sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
   });
   return result;
 };
