@@ -2,6 +2,11 @@ import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
 import { UserService } from "./user.service";
+import pick from "../../helper/pick";
+import {
+  userFilterableFields,
+  userPaginationAndSortingFields,
+} from "./user.constant";
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
   const result = await UserService.createPatient(req);
@@ -16,21 +21,17 @@ const createPatient = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
-  const { page, limit, searchTerm, sortBy, sortOrder } = req.query;
-  const result = await UserService.getAllFromDB({
-    page: Number(page),
-    limit: Number(limit),
-    searchTerm,
-    sortBy,
-    sortOrder,
-  });
+  const filters = pick(req.query, userFilterableFields);
+  const options = pick(req.query, userPaginationAndSortingFields);
+  const result = await UserService.getAllFromDB(filters, options);
   // console.log(result);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Users retrive successfully!",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
