@@ -2,9 +2,9 @@ import { addHours, addMinutes, compareAsc, format } from "date-fns";
 import { prisma } from "../../shared/prisma";
 
 const insertIntoDB = async (payload: any) => {
-  const { startDate, endDate, startTime, endTime } = payload;
-  const intervalTime = 30;
+  const { startTime, endTime, startDate, endDate } = payload;
 
+  const intervalTime = 30;
   const schedules = [];
 
   const currentDate = new Date(startDate);
