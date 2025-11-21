@@ -100,7 +100,7 @@ const schedulesForDoctor = async (fillters: any, options: IOptions) => {
       [sortBy]: sortOrder,
     },
   });
- const total = await prisma.schedule.count({
+  const total = await prisma.schedule.count({
     where: whereConditions,
   });
 
@@ -114,7 +114,16 @@ const schedulesForDoctor = async (fillters: any, options: IOptions) => {
   };
 };
 
+const deleteScheduleFromDB = async (id: string) => {
+  return await prisma.schedule.delete({
+    where: {
+      id,
+    },
+  });
+};
+
 export const ScheduleService = {
   insertIntoDB,
   schedulesForDoctor,
+  deleteScheduleFromDB,
 };
