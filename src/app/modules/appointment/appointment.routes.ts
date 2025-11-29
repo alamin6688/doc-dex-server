@@ -11,4 +11,10 @@ router.post(
   AppointmentController.createAppointment
 );
 
+router.get(
+  "/",
+  auth(UserRole.PATIENT),
+  AppointmentController.getAllAppointments
+);
+
 export const AppointmentRoutes = router;

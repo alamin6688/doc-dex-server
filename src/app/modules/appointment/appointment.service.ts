@@ -19,7 +19,7 @@ const createAppointment = async (
     },
   });
 
-  const isBookedOrNot = prisma.doctorSchedules.findFirstOrThrow({
+  const isBookedOrNot = await prisma.doctorSchedules.findFirstOrThrow({
     where: {
       doctorId: payload.doctorId,
       scheduleId: payload.scheduleId,
@@ -51,12 +51,34 @@ const createAppointment = async (
       },
     });
 
+    const transactionId = uuidv4();
+
+    await tnx.payment.create({
+      data: {
+        appointmentId: appointmentData.id,
+        amount: doctorData.appointmentFee,
+        transactionId,
+      },
+    });
+
     return appointmentData;
   });
 
   return result;
 };
 
+const getAllAppointments = async () => {
+  const result = await prisma.appointment.findMany({
+    include: {
+      patient: true,
+      doctor: true,
+      schedule: true,
+    },
+  });
+  return result;
+};
+
 export const AppointmentService = {
   createAppointment,
+  getAllAppointments,
 };

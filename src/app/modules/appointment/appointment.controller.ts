@@ -21,6 +21,18 @@ const createAppointment = catchAsync(
   }
 );
 
+const getAllAppointments = catchAsync(async (req: Request, res: Response) => {
+  const result = await AppointmentService.getAllAppointments();
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: "Appointment fetched successfully!",
+    data: result,
+  });
+});
+
 export const AppointmentController = {
   createAppointment,
+  getAllAppointments,
 };
