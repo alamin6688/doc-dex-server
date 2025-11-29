@@ -144,34 +144,6 @@ const updateIntoDB = async (
   });
 };
 
-// const extractJsonFromMessage = (message: any) => {
-//   try {
-//     const content = message?.content || "";
-
-  
-//     const jsonBlockMatch = content.match(/```json\s*([\s\S]*?)```/i);
-//     if (jsonBlockMatch) {
-//       return JSON.parse(jsonBlockMatch[1].trim());
-//     }
-
-   
-//     if (content.trim().startsWith("[") || content.trim().startsWith("{")) {
-//       return JSON.parse(content);
-//     }
-
-  
-//     const jsonFallbackMatch = content.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
-//     if (jsonFallbackMatch) {
-//       return JSON.parse(jsonFallbackMatch[1]);
-//     }
-
-//     return [];
-//   } catch (err) {
-//     console.error("JSON Parse Error:", err);
-//     return [];
-//   }
-// };
-
 const getAISuggestions = async (payload: { symptoms: string }) => {
   if (!(payload && payload.symptoms)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "symptoms is required!");
