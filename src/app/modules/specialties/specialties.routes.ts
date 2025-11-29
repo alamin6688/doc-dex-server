@@ -37,7 +37,7 @@ router.post(
 
 router.delete(
   "/:id",
-  auth(UserRole.ADMIN, UserRole.ADMIN),
+  auth(UserRole.ADMIN, UserRole.DOCTOR),
   SpecialtiesController.deleteFromDB
 );
 
