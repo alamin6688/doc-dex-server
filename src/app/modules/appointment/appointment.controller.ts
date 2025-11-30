@@ -3,6 +3,7 @@ import catchAsync from "../../shared/catchAsync";
 import { AppointmentService } from "./appointment.service";
 import sendResponse from "../../shared/sendResponse";
 import { IJWTPayload } from "../../types/common";
+import pick from "../../helper/pick";
 
 const createAppointment = catchAsync(
   async (req: Request & { user?: IJWTPayload }, res: Response) => {
@@ -21,18 +22,23 @@ const createAppointment = catchAsync(
   }
 );
 
-const getAllAppointments = catchAsync(async (req: Request, res: Response) => {
-  const result = await AppointmentService.getAllAppointments();
+const getMyAppointment = catchAsync(
+  async (req: Request & { user?: IJWTPayload }, res: Response) => {
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]);
+    const fillters = pick(req.query, ["status", "paymentStatus"]);
+    const user = req.user;
+    const result = await AppointmentService.getMyAppointment(user as IJWTPayload, fillters, options);
 
-  sendResponse(res, {
-    statusCode: 201,
-    success: true,
-    message: "Appointment fetched successfully!",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: 201,
+      success: true,
+      message: "Appointment fetched successfully!",
+      data: result,
+    });
+  }
+);
 
 export const AppointmentController = {
   createAppointment,
-  getAllAppointments,
+  getMyAppointment,
 };
