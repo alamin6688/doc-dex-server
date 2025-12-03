@@ -9,6 +9,12 @@ const router = express.Router();
 
 router.get("/", auth(UserRole.ADMIN), UserController.getAllFromDB);
 
+router.get(
+  "/me",
+  auth(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
+  UserController.getMyProfile
+);
+
 router.post(
   "/create-patient",
   fileUploader.upload.single("file"),
