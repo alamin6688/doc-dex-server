@@ -4,6 +4,9 @@ import auth from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
 const router = express.Router();
+
+router.get("/", auth(UserRole.ADMIN), AppointmentController.getAllFromDB);
+
 router.get(
   "/my-appointments",
   auth(UserRole.PATIENT, UserRole.DOCTOR),
