@@ -2,7 +2,16 @@ import { UserRole } from "@prisma/client";
 import express from "express";
 import auth from "../../middlewares/auth";
 import { PrescriptionController } from "./prescription.controller";
+import validateRequest from "../../middlewares/validateRequest";
+import { PrescriptionValidation } from "./prescription.validation";
+
 const router = express.Router();
+
+router.get(
+  "/",
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  PrescriptionController.getAllFromDB
+);
 
 router.get(
   "/my-prescription",
@@ -13,7 +22,8 @@ router.get(
 router.post(
   "/",
   auth(UserRole.DOCTOR),
-  PrescriptionController.createPrescription
+  validateRequest(PrescriptionValidation.create),
+  PrescriptionController.insertIntoDB
 );
 
 export const PrescriptionRoutes = router;

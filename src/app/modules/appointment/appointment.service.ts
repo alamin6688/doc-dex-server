@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../../shared/prisma";
-import { IJWTPayload } from "../../types/common";
+import { IAuthUser } from "../../types/common";
 import { stripe } from "../../helper/stripe";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import {
@@ -12,13 +12,10 @@ import {
 import ApiError from "../../errors/ApiError";
 import httpStatus from "http-status";
 
-const createAppointment = async (
-  user: IJWTPayload,
-  payload: { doctorId: string; scheduleId: string }
-) => {
+const createAppointment = async (user: IAuthUser, payload: any) => {
   const patientData = await prisma.patient.findUniqueOrThrow({
     where: {
-      email: user.email,
+      email: user?.email,
     },
   });
 
@@ -29,9 +26,9 @@ const createAppointment = async (
     },
   });
 
-  const isBookedOrNot = await prisma.doctorSchedules.findFirstOrThrow({
+  await prisma.doctorSchedules.findFirstOrThrow({
     where: {
-      doctorId: payload.doctorId,
+      doctorId: doctorData.id,
       scheduleId: payload.scheduleId,
       isBooked: false,
     },
@@ -74,7 +71,7 @@ const createAppointment = async (
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      customer_email: user.email,
+      customer_email: user?.email || "",
       line_items: [
         {
           price_data: {
@@ -91,9 +88,12 @@ const createAppointment = async (
         appointmentId: appointmentData.id,
         paymentId: paymentData.id,
       },
-
-      success_url: `https://www.programming-hero.com/`,
-      cancel_url: `https://next.programming-hero.com/`,
+      success_url: `${
+        process.env.FRONTEND_URL || "http://localhost:3000"
+      }/payment/success`,
+      cancel_url: `${
+        process.env.FRONTEND_URL || "http://localhost:3000"
+      }/dashboard/my-appointments`,
     });
 
     return { paymentUrl: session.url };
@@ -103,7 +103,7 @@ const createAppointment = async (
 };
 
 const getMyAppointment = async (
-  user: IJWTPayload,
+  user: IAuthUser,
   filters: any,
   options: IOptions
 ) => {
@@ -113,16 +113,16 @@ const getMyAppointment = async (
 
   const andConditions: Prisma.AppointmentWhereInput[] = [];
 
-  if (user.role === UserRole.PATIENT) {
+  if (user?.role === UserRole.PATIENT) {
     andConditions.push({
       patient: {
-        email: user.email,
+        email: user?.email,
       },
     });
-  } else if (user.role === UserRole.DOCTOR) {
+  } else if (user?.role === UserRole.DOCTOR) {
     andConditions.push({
       doctor: {
-        email: user.email,
+        email: user?.email,
       },
     });
   }
@@ -148,7 +148,39 @@ const getMyAppointment = async (
       [sortBy]: sortOrder,
     },
     include:
-      user.role === UserRole.DOCTOR ? { patient: true } : { doctor: true },
+      user?.role === UserRole.DOCTOR
+        ? {
+            patient: true,
+            schedule: true,
+            prescription: true,
+            review: true,
+            payment: true,
+            doctor: {
+              include: {
+                doctorSpecialties: {
+                  include: {
+                    specialities: true,
+                  },
+                },
+              },
+            },
+          }
+        : {
+            doctor: {
+              include: {
+                doctorSpecialties: {
+                  include: {
+                    specialities: true,
+                  },
+                },
+              },
+            },
+            schedule: true,
+            prescription: true,
+            review: true,
+            payment: true,
+            patient: true,
+          },
   });
 
   const total = await prisma.appointment.count({
@@ -165,10 +197,12 @@ const getMyAppointment = async (
   };
 };
 
+// task get all data from db (appointment data) - admin
+
 const updateAppointmentStatus = async (
   appointmentId: string,
   status: AppointmentStatus,
-  user: IJWTPayload
+  user: IAuthUser
 ) => {
   const appointmentData = await prisma.appointment.findUniqueOrThrow({
     where: {
@@ -179,8 +213,8 @@ const updateAppointmentStatus = async (
     },
   });
 
-  if (user.role === UserRole.DOCTOR) {
-    if (!(user.email === appointmentData.doctor.email))
+  if (user?.role === UserRole.DOCTOR) {
+    if (!(user?.email === appointmentData.doctor.email))
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         "This is not your appointment"
@@ -243,8 +277,20 @@ const getAllFromDB = async (filters: any, options: IOptions) => {
             createdAt: "desc",
           },
     include: {
-      doctor: true,
+      doctor: {
+        include: {
+          doctorSpecialties: {
+            include: {
+              specialities: true,
+            },
+          },
+        },
+      },
       patient: true,
+      schedule: true,
+      prescription: true,
+      review: true,
+      payment: true,
     },
   });
   const total = await prisma.appointment.count({
@@ -278,6 +324,19 @@ const cancelUnpaidAppointments = async () => {
   );
 
   await prisma.$transaction(async (tnx) => {
+    // Update appointments to CANCELED status instead of deleting
+    await tnx.appointment.updateMany({
+      where: {
+        id: {
+          in: appointmentIdsToCancel,
+        },
+      },
+      data: {
+        status: AppointmentStatus.CANCEL,
+      },
+    });
+
+    // Delete associated payments
     await tnx.payment.deleteMany({
       where: {
         appointmentId: {
@@ -286,14 +345,7 @@ const cancelUnpaidAppointments = async () => {
       },
     });
 
-    await tnx.appointment.deleteMany({
-      where: {
-        id: {
-          in: appointmentIdsToCancel,
-        },
-      },
-    });
-
+    // Free up doctor schedules
     for (const unPaidAppointment of unPaidAppointments) {
       await tnx.doctorSchedules.update({
         where: {
@@ -310,28 +362,146 @@ const cancelUnpaidAppointments = async () => {
   });
 };
 
-const deleteAppointment = async (id: string, user: IJWTPayload) => {
-  const appointmentData = await prisma.appointment.findUniqueOrThrow({
+const createAppointmentWithPayLater = async (user: IAuthUser, payload: any) => {
+  const patientData = await prisma.patient.findUniqueOrThrow({
     where: {
-      id,
+      email: user?.email,
+    },
+  });
+
+  const doctorData = await prisma.doctor.findUniqueOrThrow({
+    where: {
+      id: payload.doctorId,
+      isDeleted: false,
+    },
+  });
+
+  await prisma.doctorSchedules.findFirstOrThrow({
+    where: {
+      doctorId: doctorData.id,
+      scheduleId: payload.scheduleId,
+      isBooked: false,
+    },
+  });
+
+  const videoCallingId = uuidv4();
+
+  const result = await prisma.$transaction(async (tnx) => {
+    const appointmentData = await tnx.appointment.create({
+      data: {
+        patientId: patientData.id,
+        doctorId: doctorData.id,
+        scheduleId: payload.scheduleId,
+        videoCallingId,
+      },
+      include: {
+        patient: true,
+        doctor: true,
+        schedule: true,
+      },
+    });
+
+    await tnx.doctorSchedules.update({
+      where: {
+        doctorId_scheduleId: {
+          doctorId: doctorData.id,
+          scheduleId: payload.scheduleId,
+        },
+      },
+      data: {
+        isBooked: true,
+      },
+    });
+
+    const transactionId = uuidv4();
+
+    await tnx.payment.create({
+      data: {
+        appointmentId: appointmentData.id,
+        amount: doctorData.appointmentFee,
+        transactionId,
+      },
+    });
+
+    return appointmentData;
+  });
+
+  return result;
+};
+
+const initiatePaymentForAppointment = async (
+  appointmentId: string,
+  user: IAuthUser
+) => {
+  const patientData = await prisma.patient.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
+  });
+
+  const appointment = await prisma.appointment.findUnique({
+    where: {
+      id: appointmentId,
+      patientId: patientData.id,
     },
     include: {
-      patient: true,
+      payment: true,
+      doctor: true,
     },
   });
-  if (user.role === UserRole.PATIENT) {
-    if (!(user.email === appointmentData.patient.email))
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        "This is not your appointment"
-      );
+
+  if (!appointment) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Appointment not found or unauthorized"
+    );
   }
-  return await prisma.appointment.delete({
-    where: {
-      id,
+
+  if (appointment.paymentStatus !== PaymentStatus.UNPAID) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Payment already completed for this appointment"
+    );
+  }
+
+  if (appointment.status === AppointmentStatus.CANCEL) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot pay for cancelled appointment"
+    );
+  }
+
+  // Create Stripe checkout session
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    customer_email: user?.email || "",
+    line_items: [
+      {
+        price_data: {
+          currency: "bdt",
+          product_data: {
+            name: `Appointment with ${appointment.doctor.name}`,
+          },
+          unit_amount: appointment.payment!.amount * 100,
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      appointmentId: appointment.id,
+      paymentId: appointment.payment!.id,
     },
+    success_url: `${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }/payment/success`,
+    cancel_url: `${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }/dashboard/my-appointments`,
   });
-}
+
+  return { paymentUrl: session.url };
+};
 
 export const AppointmentService = {
   createAppointment,
@@ -339,5 +509,6 @@ export const AppointmentService = {
   updateAppointmentStatus,
   getAllFromDB,
   cancelUnpaidAppointments,
-  deleteAppointment
+  createAppointmentWithPayLater,
+  initiatePaymentForAppointment,
 };
