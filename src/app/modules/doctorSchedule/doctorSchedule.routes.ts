@@ -6,9 +6,15 @@ import validateRequest from "../../middlewares/validateRequest";
 import { DoctorScheduleValidation } from "./doctorSchedule.validation";
 
 const router = express.Router();
+
+/**
+ * API ENDPOINT: /doctor-schedule/
+ *
+ * Get all doctor schedule with filtering
+ */
 router.get(
   "/",
-  auth(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
   DoctorScheduleController.getAllFromDB
 );
 
@@ -21,9 +27,7 @@ router.get(
 router.post(
   "/",
   auth(UserRole.DOCTOR),
-  validateRequest(
-    DoctorScheduleValidation.createDoctorScheduleValidationSchema
-  ),
+  validateRequest(DoctorScheduleValidation.create),
   DoctorScheduleController.insertIntoDB
 );
 
@@ -33,4 +37,4 @@ router.delete(
   DoctorScheduleController.deleteFromDB
 );
 
-export const doctorScheduleRoutes = router;
+export const DoctorScheduleRoutes  = router;

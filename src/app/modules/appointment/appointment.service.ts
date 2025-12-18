@@ -310,10 +310,34 @@ const cancelUnpaidAppointments = async () => {
   });
 };
 
+const deleteAppointment = async (id: string, user: IJWTPayload) => {
+  const appointmentData = await prisma.appointment.findUniqueOrThrow({
+    where: {
+      id,
+    },
+    include: {
+      patient: true,
+    },
+  });
+  if (user.role === UserRole.PATIENT) {
+    if (!(user.email === appointmentData.patient.email))
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "This is not your appointment"
+      );
+  }
+  return await prisma.appointment.delete({
+    where: {
+      id,
+    },
+  });
+}
+
 export const AppointmentService = {
   createAppointment,
   getMyAppointment,
   updateAppointmentStatus,
   getAllFromDB,
   cancelUnpaidAppointments,
+  deleteAppointment
 };

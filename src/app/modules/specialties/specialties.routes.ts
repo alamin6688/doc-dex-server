@@ -22,7 +22,7 @@ router.post(
   fileUploader.upload.single("file"),
   (req: Request, res: Response, next: NextFunction) => {
     req.body = SpecialtiesValidtaion.create.parse(JSON.parse(req.body.data));
-    return SpecialtiesController.inserIntoDB(req, res, next);
+    return SpecialtiesController.insertIntoDB(req, res, next);
   }
 );
 
@@ -37,7 +37,7 @@ router.post(
 
 router.delete(
   "/:id",
-  auth(UserRole.ADMIN, UserRole.DOCTOR),
+  auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   SpecialtiesController.deleteFromDB
 );
 

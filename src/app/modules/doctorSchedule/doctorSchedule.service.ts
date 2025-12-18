@@ -1,12 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { prisma } from "../../shared/prisma";
-import { IJWTPayload } from "../../types/common";
+import { IAuthUser } from "../../types/common";
 import ApiError from "../../errors/ApiError";
 import httpStatus from "http-status";
+import { IDoctorScheduleFilterRequest } from "./doctorSchedule.interface";
 
 const insertIntoDB = async (
-  user: IJWTPayload,
+  user: any,
   payload: {
     scheduleIds: string[];
   }
@@ -22,15 +23,17 @@ const insertIntoDB = async (
     scheduleId,
   }));
 
-  return await prisma.doctorSchedules.createMany({
+  const result = await prisma.doctorSchedules.createMany({
     data: doctorScheduleData,
   });
+
+  return result;
 };
 
 const getMySchedule = async (
   filters: any,
   options: IOptions,
-  user: IJWTPayload
+  user: IAuthUser
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { startDate, endDate, ...filterData } = filters;
@@ -108,7 +111,7 @@ const getMySchedule = async (
   };
 };
 
-const deleteFromDB = async (user: IJWTPayload, scheduleId: string) => {
+const deleteFromDB = async (user: IAuthUser, scheduleId: string) => {
   const doctorData = await prisma.doctor.findUniqueOrThrow({
     where: {
       email: user?.email,
@@ -141,7 +144,10 @@ const deleteFromDB = async (user: IJWTPayload, scheduleId: string) => {
   return result;
 };
 
-const getAllFromDB = async (filters: any, options: IOptions) => {
+const getAllFromDB = async (
+  filters: IDoctorScheduleFilterRequest,
+  options: IOptions
+) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filters;
   const andConditions = [];
@@ -209,7 +215,7 @@ const getAllFromDB = async (filters: any, options: IOptions) => {
 
 export const DoctorScheduleService = {
   insertIntoDB,
-  getAllFromDB,
   getMySchedule,
   deleteFromDB,
+  getAllFromDB,
 };

@@ -78,9 +78,27 @@ const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteAppointment = catchAsync(
+  async (req: Request & { user?: IJWTPayload }, res: Response) => {
+    const { id } = req.params;
+    const user = req.user;  
+    const result = await AppointmentService.deleteAppointment(
+      id,
+      user as IJWTPayload
+    );
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Appointment deleted successfully",
+      data: result,
+    });
+  }
+);
+
 export const AppointmentController = {
   createAppointment,
   getMyAppointment,
   updateAppointmentStatus,
   getAllFromDB,
+  deleteAppointment
 };

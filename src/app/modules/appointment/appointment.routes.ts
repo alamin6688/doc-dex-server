@@ -25,4 +25,10 @@ router.patch(
   AppointmentController.updateAppointmentStatus
 );
 
+router.delete(
+  "/:id",
+  auth(UserRole.ADMIN, UserRole.PATIENT),
+  AppointmentController.deleteAppointment
+);
+
 export const AppointmentRoutes = router;

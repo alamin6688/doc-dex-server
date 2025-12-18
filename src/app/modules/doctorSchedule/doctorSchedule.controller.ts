@@ -2,21 +2,17 @@ import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
 import { DoctorScheduleService } from "./doctorSchedule.service";
-import { IJWTPayload } from "../../types/common";
+import { IAuthUser } from "../../types/common";
 import httpStatus from "http-status";
 import pick from "../../helper/pick";
 import { scheduleFilterableFields } from "./doctorSchedule.constant";
-
 const insertIntoDB = catchAsync(
-  async (req: Request & { user?: IJWTPayload }, res: Response) => {
+  async (req: Request & { user?: IAuthUser }, res: Response) => {
     const user = req.user;
-    const result = await DoctorScheduleService.insertIntoDB(
-      user as IJWTPayload,
-      req.body
-    );
+    const result = await DoctorScheduleService.insertIntoDB(user, req.body);
 
     sendResponse(res, {
-      statusCode: 201,
+      statusCode: httpStatus.OK,
       success: true,
       message: "Doctor Schedule created successfully!",
       data: result,
@@ -25,7 +21,7 @@ const insertIntoDB = catchAsync(
 );
 
 const getMySchedule = catchAsync(
-  async (req: Request & { user?: IJWTPayload }, res: Response) => {
+  async (req: Request & { user?: IAuthUser }, res: Response) => {
     const filters = pick(req.query, ["startDate", "endDate", "isBooked"]);
     const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
 
@@ -33,7 +29,7 @@ const getMySchedule = catchAsync(
     const result = await DoctorScheduleService.getMySchedule(
       filters,
       options,
-      user as IJWTPayload
+      user as IAuthUser
     );
 
     sendResponse(res, {
@@ -46,11 +42,11 @@ const getMySchedule = catchAsync(
 );
 
 const deleteFromDB = catchAsync(
-  async (req: Request & { user?: IJWTPayload }, res: Response) => {
+  async (req: Request & { user?: IAuthUser }, res: Response) => {
     const user = req.user;
     const { id } = req.params;
     const result = await DoctorScheduleService.deleteFromDB(
-      user as IJWTPayload,
+      user as IAuthUser,
       id
     );
 
@@ -78,7 +74,7 @@ const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
 
 export const DoctorScheduleController = {
   insertIntoDB,
-  getAllFromDB,
   getMySchedule,
   deleteFromDB,
+  getAllFromDB,
 };

@@ -1,8 +1,8 @@
 export type IOptions = {
   page?: string | number;
   limit?: string | number;
-  sortBy?: string;
-  sortOrder?: string;
+  sortBy?: string | undefined;
+  sortOrder?: string | undefined;
 };
 
 type IOptionsResult = {
