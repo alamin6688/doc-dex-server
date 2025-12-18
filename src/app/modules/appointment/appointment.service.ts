@@ -332,7 +332,7 @@ const cancelUnpaidAppointments = async () => {
         },
       },
       data: {
-        status: AppointmentStatus.CANCEL,
+        status: AppointmentStatus.CANCELED,
       },
     });
 
@@ -464,7 +464,7 @@ const initiatePaymentForAppointment = async (
     );
   }
 
-  if (appointment.status === AppointmentStatus.CANCEL) {
+  if (appointment.status === AppointmentStatus.CANCELED) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "Cannot pay for cancelled appointment"
