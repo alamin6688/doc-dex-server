@@ -19,6 +19,7 @@ export default {
     access_token_expires_in: process.env.ACCESS_TOKEN_EXPIRES_IN,
     refresh_token_expires_in: process.env.REFRESH_TOKEN_EXPIRES_IN,
     reset_pass: process.env.RESET_PASS,
+    reset_pass_secret: process.env.RESET_PASS_SECRET,
     reset_pass_expires_in: process.env.RESET_PASS_EXPIRES_IN,
     reset_pass_link: process.env.RESET_PASS_LINK,
   },

@@ -11,7 +11,7 @@ import { askOpenRouter } from "../../helper/openRouterClient";
 
 const getAllFromDB = async (
   filters: IDoctorFilterRequest,
-  options: IOptions
+  options: IOptions,
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, specialties, ...filterData } = filters;
@@ -177,13 +177,13 @@ const updateIntoDB = async (id: string, payload: IDoctorUpdate) => {
 
       if (existingDoctorSpecialties.length !== removeSpecialties.length) {
         const foundIds = existingDoctorSpecialties.map(
-          (ds) => ds.specialitiesId
+          (ds) => ds.specialitiesId,
         );
         const notFound = removeSpecialties.filter(
-          (id) => !foundIds.includes(id)
+          (id) => !foundIds.includes(id),
         );
         throw new Error(
-          `Cannot remove non-existent specialties: ${notFound.join(", ")}`
+          `Cannot remove non-existent specialties: ${notFound.join(", ")}`,
         );
       }
 
@@ -214,12 +214,12 @@ const updateIntoDB = async (id: string, payload: IDoctorUpdate) => {
 
       const existingSpecialtyIds = existingSpecialties.map((s) => s.id);
       const invalidSpecialties = specialties.filter(
-        (id) => !existingSpecialtyIds.includes(id)
+        (id) => !existingSpecialtyIds.includes(id),
       );
 
       if (invalidSpecialties.length > 0) {
         throw new Error(
-          `Invalid specialty IDs: ${invalidSpecialties.join(", ")}`
+          `Invalid specialty IDs: ${invalidSpecialties.join(", ")}`,
         );
       }
 
@@ -238,10 +238,10 @@ const updateIntoDB = async (id: string, payload: IDoctorUpdate) => {
         });
 
       const currentSpecialtyIds = currentDoctorSpecialties.map(
-        (ds) => ds.specialitiesId
+        (ds) => ds.specialitiesId,
       );
       const newSpecialties = specialties.filter(
-        (id) => !currentSpecialtyIds.includes(id)
+        (id) => !currentSpecialtyIds.includes(id),
       );
 
       // Only create new specialties that don't already exist
@@ -466,7 +466,7 @@ RESPOND WITH ONLY THE JSON ARRAY - NO EXPLANATIONS, NO MARKDOWN, NO EXTRA TEXT.
 
 const getAllPublic = async (
   filters: IDoctorFilterRequest,
-  options: IOptions
+  options: IOptions,
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, specialties, ...filterData } = filters;

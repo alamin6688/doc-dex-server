@@ -19,7 +19,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
 
   const isCorrectPassword: boolean = await bcrypt.compare(
     payload.password,
-    userData.password
+    userData.password,
   );
 
   if (!isCorrectPassword) {
@@ -31,7 +31,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
       role: userData.role,
     },
     config.jwt.access_token_secret as Secret,
-    config.jwt.access_token_expires_in as string
+    config.jwt.access_token_expires_in as string,
   );
 
   const refreshToken = jwtHelper.generateToken(
@@ -40,7 +40,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
       role: userData.role,
     },
     config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
+    config.jwt.refresh_token_expires_in as string,
   );
 
   return {
@@ -55,7 +55,7 @@ const refreshToken = async (token: string) => {
   try {
     decodedData = jwtHelper.verifyToken(
       token,
-      config.jwt.refresh_token_secret as Secret
+      config.jwt.refresh_token_secret as Secret,
     );
   } catch (err) {
     throw new Error("You are not authorized!");
@@ -74,7 +74,7 @@ const refreshToken = async (token: string) => {
       role: userData.role,
     },
     config.jwt.access_token_secret as Secret,
-    config.jwt.access_token_expires_in as string
+    config.jwt.access_token_expires_in as string,
   );
 
   const refreshToken = jwtHelper.generateToken(
@@ -83,7 +83,7 @@ const refreshToken = async (token: string) => {
       role: userData.role,
     },
     config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
+    config.jwt.refresh_token_expires_in as string,
   );
 
   return {
@@ -103,7 +103,7 @@ const changePassword = async (user: any, payload: any) => {
 
   const isCorrectPassword: boolean = await bcrypt.compare(
     payload.oldPassword,
-    userData.password
+    userData.password,
   );
 
   if (!isCorrectPassword) {
@@ -112,7 +112,7 @@ const changePassword = async (user: any, payload: any) => {
 
   const hashedPassword: string = await bcrypt.hash(
     payload.newPassword,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
 
   await prisma.user.update({
@@ -140,12 +140,12 @@ const forgotPassword = async (payload: { email: string }) => {
 
   const resetPassToken = jwtHelper.generateToken(
     { email: userData.email, userId: userData.id, role: userData.role },
-    config.jwt.reset_pass as Secret,
-    config.jwt.reset_pass_expires_in as string
+    config.jwt.reset_pass_secret as Secret,
+    config.jwt.reset_pass_expires_in as string,
   );
 
   const resetPassLink =
-    process.env.RESET_PASS_LINK +
+    config.jwt.reset_pass_link +
     `?email=${encodeURIComponent(userData.email)}&token=${resetPassToken}`;
 
   await emailSender(
@@ -224,14 +224,14 @@ const forgotPassword = async (payload: { email: string }) => {
             </table>
         </body>
         </html>
-        `
+        `,
   );
 };
 
 const resetPassword = async (
   token: string | null,
   payload: { email?: string; password: string },
-  user?: { email: string }
+  user?: { email: string },
 ) => {
   let userEmail: string;
 
@@ -239,13 +239,13 @@ const resetPassword = async (
   if (token) {
     const decodedToken = jwtHelper.verifyToken(
       token,
-      config.jwt.access_token_secret as Secret
+      config.jwt.reset_pass_secret as Secret,
     );
 
     if (!decodedToken) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
-        "Invalid or expired reset token!"
+        "Invalid or expired reset token!",
       );
     }
 
@@ -253,7 +253,7 @@ const resetPassword = async (
     if (payload.email && decodedToken.email !== payload.email) {
       throw new ApiError(
         httpStatus.FORBIDDEN,
-        "Email mismatch! Invalid reset request."
+        "Email mismatch! Invalid reset request.",
       );
     }
 
@@ -273,7 +273,7 @@ const resetPassword = async (
     if (!authenticatedUser.needPasswordChange) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        "You don't need to reset your password. Use change password instead."
+        "You don't need to reset your password. Use change password instead.",
       );
     }
 
@@ -281,14 +281,14 @@ const resetPassword = async (
   } else {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Invalid request. Either provide a valid token or be authenticated."
+      "Invalid request. Either provide a valid token or be authenticated.",
     );
   }
 
   // hash password
   const password = await bcrypt.hash(
     payload.password,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
 
   // update into database
@@ -307,7 +307,7 @@ const getMe = async (user: any) => {
   const accessToken = user.accessToken;
   const decodedData = jwtHelper.verifyToken(
     accessToken,
-    config.jwt.access_token_secret as Secret
+    config.jwt.access_token_secret as Secret,
   );
 
   const userData = await prisma.user.findUniqueOrThrow({

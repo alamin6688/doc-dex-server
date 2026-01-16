@@ -16,10 +16,9 @@ const emailSender = async (email: string, html: string) => {
   });
 
   const info = await transporter.sendMail({
-    from: '"Fuade Hasan Alamin" <alamin.kzs06@gmail.com>', // sender address
-    to: email, // list of receivers
-    subject: "Reset Password Link", // Subject line
-    //text: "Hello world?", // plain text body
+    from: '"Fuade Hasan Alamin" <alamin.kzs06@gmail.com>',
+    to: email, 
+    subject: "Reset Password Link",
     html, // html body
   });
 };

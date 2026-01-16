@@ -168,7 +168,7 @@ const changePassword = catchAsync(
       message: "Password Changed successfully",
       data: result,
     });
-  }
+  },
 );
 
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
@@ -198,7 +198,7 @@ const resetPassword = catchAsync(
       message: "Password Reset!",
       data: null,
     });
-  }
+  },
 );
 
 const getMe = catchAsync(
@@ -213,7 +213,7 @@ const getMe = catchAsync(
       message: "User retrieved successfully",
       data: result,
     });
-  }
+  },
 );
 
 export const AuthController = {

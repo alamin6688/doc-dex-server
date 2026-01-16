@@ -20,21 +20,21 @@ router.patch(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.DOCTOR),
   validateRequest(DoctorValidation.update),
-  DoctorController.updateIntoDB
+  DoctorController.updateIntoDB,
 );
 
 //task 5
 router.delete(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  DoctorController.deleteFromDB
+  DoctorController.deleteFromDB,
 );
 
 // task 6
 router.delete(
   "/soft/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  DoctorController.softDelete
+  DoctorController.softDelete,
 );
 
 export const DoctorRoutes = router;
