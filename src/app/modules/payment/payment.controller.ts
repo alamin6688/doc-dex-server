@@ -10,6 +10,11 @@ const handleStripeWebhookEvent = catchAsync(
     const sig = req.headers["stripe-signature"] as string;
     const webhookSecret = config.webhookSecret as string;
 
+    if (!webhookSecret) {
+      console.error("⚠️ Stripe webhook secret not configured");
+      return res.status(500).send("Webhook secret not configured");
+    }
+
     let event;
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
@@ -17,15 +22,28 @@ const handleStripeWebhookEvent = catchAsync(
       console.error("⚠️ Webhook signature verification failed:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-    const result = await PaymentService.handleStripeWebhookEvent(event);
 
-    sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Webhook request sent successfully",
-      data: result,
-    });
-  }
+    try {
+      const result = await PaymentService.handleStripeWebhookEvent(event);
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Webhook processed successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("❌ Error processing webhook:", error);
+      // Still return 200 to acknowledge receipt to Stripe
+      // Stripe will retry if we return an error
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Webhook received but processing failed",
+        data: { error: error.message },
+      });
+    }
+  },
 );
 
 export const PaymentController = {

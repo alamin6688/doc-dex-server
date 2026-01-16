@@ -17,13 +17,13 @@ const router = express.Router();
 router.get(
   "/",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  AppointmentController.getAllFromDB
+  AppointmentController.getAllFromDB,
 );
 
 router.get(
   "/my-appointment",
   auth(UserRole.PATIENT, UserRole.DOCTOR),
-  AppointmentController.getMyAppointment
+  AppointmentController.getMyAppointment,
 );
 
 router.post(
@@ -31,33 +31,33 @@ router.post(
   auth(UserRole.PATIENT),
   paymentLimiter,
   validateRequest(AppointmentValidation.createAppointment),
-  AppointmentController.createAppointment
+  AppointmentController.createAppointment,
 );
 
 router.post(
   "/pay-later",
   auth(UserRole.PATIENT),
   validateRequest(AppointmentValidation.createAppointment),
-  AppointmentController.createAppointmentWithPayLater
+  AppointmentController.createAppointmentWithPayLater,
 );
 
 router.post(
   "/:id/initiate-payment",
   auth(UserRole.PATIENT),
   paymentLimiter,
-  AppointmentController.initiatePayment
+  AppointmentController.initiatePayment,
 );
 
 router.patch(
   "/status/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.DOCTOR),
-  AppointmentController.changeAppointmentStatus
+  AppointmentController.changeAppointmentStatus,
 );
 
 router.post(
   "/pay-later",
   auth(UserRole.PATIENT),
-  AppointmentController.createAppointmentWithPayLater
+  AppointmentController.createAppointmentWithPayLater,
 );
 
 export const AppointmentRoutes = router;

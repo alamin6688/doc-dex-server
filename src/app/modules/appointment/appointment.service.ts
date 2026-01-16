@@ -88,12 +88,8 @@ const createAppointment = async (user: IAuthUser, payload: any) => {
         appointmentId: appointmentData.id,
         paymentId: paymentData.id,
       },
-      success_url: `${
-        process.env.FRONTEND_URL || "http://localhost:3000"
-      }/payment/success`,
-      cancel_url: `${
-        process.env.FRONTEND_URL || "http://localhost:3000"
-      }/dashboard/my-appointments`,
+      success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/success`,
+      cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/my-appointments`,
     });
 
     return { paymentUrl: session.url };
@@ -105,7 +101,7 @@ const createAppointment = async (user: IAuthUser, payload: any) => {
 const getMyAppointment = async (
   user: IAuthUser,
   filters: any,
-  options: IOptions
+  options: IOptions,
 ) => {
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(options);
@@ -202,7 +198,7 @@ const getMyAppointment = async (
 const updateAppointmentStatus = async (
   appointmentId: string,
   status: AppointmentStatus,
-  user: IAuthUser
+  user: IAuthUser,
 ) => {
   const appointmentData = await prisma.appointment.findUniqueOrThrow({
     where: {
@@ -217,7 +213,7 @@ const updateAppointmentStatus = async (
     if (!(user?.email === appointmentData.doctor.email))
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        "This is not your appointment"
+        "This is not your appointment",
       );
   }
 
@@ -320,7 +316,7 @@ const cancelUnpaidAppointments = async () => {
   });
 
   const appointmentIdsToCancel = unPaidAppointments.map(
-    (appointment) => appointment.id
+    (appointment) => appointment.id,
   );
 
   await prisma.$transaction(async (tnx) => {
@@ -431,7 +427,7 @@ const createAppointmentWithPayLater = async (user: IAuthUser, payload: any) => {
 
 const initiatePaymentForAppointment = async (
   appointmentId: string,
-  user: IAuthUser
+  user: IAuthUser,
 ) => {
   const patientData = await prisma.patient.findUniqueOrThrow({
     where: {
@@ -453,21 +449,21 @@ const initiatePaymentForAppointment = async (
   if (!appointment) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Appointment not found or unauthorized"
+      "Appointment not found or unauthorized",
     );
   }
 
   if (appointment.paymentStatus !== PaymentStatus.UNPAID) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Payment already completed for this appointment"
+      "Payment already completed for this appointment",
     );
   }
 
   if (appointment.status === AppointmentStatus.CANCELED) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Cannot pay for cancelled appointment"
+      "Cannot pay for cancelled appointment",
     );
   }
 
@@ -492,12 +488,8 @@ const initiatePaymentForAppointment = async (
       appointmentId: appointment.id,
       paymentId: appointment.payment!.id,
     },
-    success_url: `${
-      process.env.FRONTEND_URL || "http://localhost:3000"
-    }/payment/success`,
-    cancel_url: `${
-      process.env.FRONTEND_URL || "http://localhost:3000"
-    }/dashboard/my-appointments`,
+    success_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/success`,
+    cancel_url: `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard/my-appointments`,
   });
 
   return { paymentUrl: session.url };
