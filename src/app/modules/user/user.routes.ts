@@ -30,6 +30,7 @@ router.post(
   }
 );
 
+
 router.post(
   "/create-doctor",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
