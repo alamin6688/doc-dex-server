@@ -1,9 +1,9 @@
-import { addHours, addMinutes, compareAsc, format } from "date-fns";
-import { prisma } from "../../shared/prisma";
-import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { Prisma, Schedule } from "@prisma/client";
-import { IAuthUser } from "../../types/common";
+import { addHours, addMinutes, format } from "date-fns";
 import { IFilterRequest, ISchedule } from "./schedule.interface";
+import { IAuthUser } from "../../types/common";
+import { IOptions, paginationHelper } from "../../helper/paginationHelper";
+import { prisma } from "../../shared/prisma";
 
 const convertDateTime = async (date: Date) => {
   const offset = date.getTimezoneOffset() * 60000;
@@ -26,20 +26,20 @@ const inserIntoDB = async (payload: ISchedule): Promise<Schedule[]> => {
       addMinutes(
         addHours(
           `${format(currentDate, "yyyy-MM-dd")}`,
-          Number(startTime.split(":")[0])
+          Number(startTime.split(":")[0]),
         ),
-        Number(startTime.split(":")[1])
-      )
+        Number(startTime.split(":")[1]),
+      ),
     );
 
     const endDateTime = new Date(
       addMinutes(
         addHours(
           `${format(currentDate, "yyyy-MM-dd")}`,
-          Number(endTime.split(":")[0])
+          Number(endTime.split(":")[0]),
         ),
-        Number(endTime.split(":")[1])
-      )
+        Number(endTime.split(":")[1]),
+      ),
     );
 
     while (startDateTime < endDateTime) {
@@ -82,7 +82,7 @@ const inserIntoDB = async (payload: ISchedule): Promise<Schedule[]> => {
 const getAllFromDB = async (
   filters: IFilterRequest,
   options: IOptions,
-  user: IAuthUser
+  user: IAuthUser,
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const { startDate, endDate, ...filterData } = filters;
@@ -157,7 +157,7 @@ const getAllFromDB = async (
   });
 
   const doctorScheduleIds = doctorSchedules.map(
-    (schedule) => schedule.scheduleId
+    (schedule) => schedule.scheduleId,
   );
 
   const result = await prisma.schedule.findMany({

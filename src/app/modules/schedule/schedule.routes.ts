@@ -1,14 +1,14 @@
-import express from "express";
-import { ScheduleController } from "./schedule.controller";
-import auth from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
+import express from "express";
+import auth from "../../middlewares/auth";
+import { ScheduleController } from "./schedule.controller";
 
 const router = express.Router();
 
 router.get(
   "/",
   auth(UserRole.DOCTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  ScheduleController.getAllFromDB
+  ScheduleController.getAllFromDB,
 );
 
 /**
@@ -19,13 +19,13 @@ router.get(
 router.get(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT),
-  ScheduleController.getByIdFromDB
+  ScheduleController.getByIdFromDB,
 );
 
 router.post(
   "/",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  ScheduleController.insertIntoDB
+  ScheduleController.insertIntoDB,
 );
 
 /**
@@ -36,7 +36,7 @@ router.post(
 router.delete(
   "/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  ScheduleController.deleteFromDB
+  ScheduleController.deleteFromDB,
 );
 
 export const ScheduleRoutes = router;
