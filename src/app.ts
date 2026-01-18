@@ -1,8 +1,7 @@
 import express, { Application, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
-import notFound from "./app/middlewares/notFound";
-import config from "./config";
+import httpStatus from "http-status";
 import router from "./app/routes";
 import cookieParser from "cookie-parser";
 import { PaymentController } from "./app/modules/payment/payment.controller";
@@ -10,47 +9,56 @@ import cron from "node-cron";
 import { AppointmentService } from "./app/modules/appointment/appointment.service";
 
 const app: Application = express();
+app.use(cookieParser());
 
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  PaymentController.handleStripeWebhookEvent
+  PaymentController.handleStripeWebhookEvent,
 );
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials: true,
-  })
+  }),
 );
 
 //parser
 app.use(express.json());
-app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-cron.schedule("* * * * *", () => {
+cron.schedule("*/5 * * * *", () => {
   try {
-    console.log("Node cron called at ", new Date());
+    console.log(
+      "🔄 Running unpaid appointment cleanup at",
+      new Date().toISOString(),
+    );
     AppointmentService.cancelUnpaidAppointments();
   } catch (err) {
-    console.error(err);
+    console.error("❌ Cron job error:", err);
   }
+});
+
+app.get("/", (req: Request, res: Response) => {
+  res.send({
+    Message: "Doc Dex server...",
+  });
 });
 
 app.use("/api/v1", router);
 
-app.get("/", (req: Request, res: Response) => {
-  res.send({
-    message: "Server is running..",
-    environment: config.node_env,
-    uptime: process.uptime().toFixed(2) + " sec",
-    timeStamp: new Date().toISOString(),
-  });
-});
-
 app.use(globalErrorHandler);
 
-app.use(notFound);
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.status(httpStatus.NOT_FOUND).json({
+    success: false,
+    message: "API NOT FOUND!",
+    error: {
+      path: req.originalUrl,
+      message: "Your requested path is not found!",
+    },
+  });
+});
 
 export default app;
