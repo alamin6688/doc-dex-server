@@ -1,81 +1,51 @@
 import { Prisma, Schedule } from "@prisma/client";
-import { addHours, addMinutes, format } from "date-fns";
+
 import { IFilterRequest, ISchedule } from "./schedule.interface";
 import { IAuthUser } from "../../types/common";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { prisma } from "../../shared/prisma";
 
-const convertDateTime = async (date: Date) => {
-  const offset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() + offset);
-};
-
 const inserIntoDB = async (payload: ISchedule): Promise<Schedule[]> => {
   const { startDate, endDate, startTime, endTime } = payload;
-
   const intervalTime = 30;
-
   const schedules = [];
-
-  const currentDate = new Date(startDate); // start date
-  const lastDate = new Date(endDate); // end date
-
+  const currentDate = new Date(startDate);
+  const lastDate = new Date(endDate);
   while (currentDate <= lastDate) {
-    // 09:30  ---> ['09', '30']
-    const startDateTime = new Date(
-      addMinutes(
-        addHours(
-          `${format(currentDate, "yyyy-MM-dd")}`,
-          Number(startTime.split(":")[0]),
-        ),
-        Number(startTime.split(":")[1]),
-      ),
-    );
+    // Parse HH:mm
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    // Set start/end times for the current day
+    const startDateTime = new Date(currentDate);
+    startDateTime.setHours(startH, startM, 0, 0);
+    const endDateTime = new Date(currentDate);
+    endDateTime.setHours(endH, endM, 0, 0);
+    let currentSlot = new Date(startDateTime);
 
-    const endDateTime = new Date(
-      addMinutes(
-        addHours(
-          `${format(currentDate, "yyyy-MM-dd")}`,
-          Number(endTime.split(":")[0]),
-        ),
-        Number(endTime.split(":")[1]),
-      ),
-    );
-
-    while (startDateTime < endDateTime) {
-      // const scheduleData = {
-      //     startDateTime: startDateTime,
-      //     endDateTime: addMinutes(startDateTime, intervalTime)
-      // }
-
-      const s = await convertDateTime(startDateTime);
-      const e = await convertDateTime(addMinutes(startDateTime, intervalTime));
-
-      const scheduleData = {
-        startDateTime: s,
-        endDateTime: e,
-      };
-
+    while (currentSlot < endDateTime) {
+      const slotStart = new Date(currentSlot);
+      const slotEnd = new Date(currentSlot.getTime() + intervalTime * 60000); // 30 mins in ms
       const existingSchedule = await prisma.schedule.findFirst({
         where: {
-          startDateTime: scheduleData.startDateTime,
-          endDateTime: scheduleData.endDateTime,
-        },
+          startDateTime: slotStart,
+          endDateTime: slotEnd
+        }
       });
-
       if (!existingSchedule) {
         const result = await prisma.schedule.create({
-          data: scheduleData,
+          data: {
+            startDateTime: slotStart,
+            endDateTime: slotEnd
+          }
         });
         schedules.push(result);
       }
 
-      startDateTime.setMinutes(startDateTime.getMinutes() + intervalTime);
+      // Increment by 30 mins
+      currentSlot = slotEnd;
     }
-
     currentDate.setDate(currentDate.getDate() + 1);
   }
-
   return schedules;
 };
 
@@ -173,8 +143,8 @@ const getAllFromDB = async (
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }
         : {
-            createdAt: "desc",
-          },
+          createdAt: "desc",
+        },
   });
 
   const total = await prisma.schedule.count({
