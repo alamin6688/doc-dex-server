@@ -2,6 +2,8 @@ import { UserRole } from "@prisma/client";
 import express from "express";
 import auth from "../../middlewares/auth";
 import { ScheduleController } from "./schedule.controller";
+import validateRequest from "../../middlewares/validateRequest";
+import { ScheduleValidation } from "./schedule.validation";
 
 const router = express.Router();
 
@@ -25,6 +27,7 @@ router.get(
 router.post(
   "/",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  validateRequest(ScheduleValidation.create),
   ScheduleController.insertIntoDB,
 );
 
