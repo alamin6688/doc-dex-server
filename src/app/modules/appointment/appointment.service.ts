@@ -146,37 +146,37 @@ const getMyAppointment = async (
     include:
       user?.role === UserRole.DOCTOR
         ? {
-            patient: true,
-            schedule: true,
-            prescription: true,
-            review: true,
-            payment: true,
-            doctor: {
-              include: {
-                doctorSpecialties: {
-                  include: {
-                    specialities: true,
-                  },
+          patient: true,
+          schedule: true,
+          prescription: true,
+          review: true,
+          payment: true,
+          doctor: {
+            include: {
+              doctorSpecialties: {
+                include: {
+                  specialities: true,
                 },
               },
             },
-          }
-        : {
-            doctor: {
-              include: {
-                doctorSpecialties: {
-                  include: {
-                    specialities: true,
-                  },
-                },
-              },
-            },
-            schedule: true,
-            prescription: true,
-            review: true,
-            payment: true,
-            patient: true,
           },
+        }
+        : {
+          doctor: {
+            include: {
+              doctorSpecialties: {
+                include: {
+                  specialities: true,
+                },
+              },
+            },
+          },
+          schedule: true,
+          prescription: true,
+          review: true,
+          payment: true,
+          patient: true,
+        },
   });
 
   const total = await prisma.appointment.count({
@@ -270,8 +270,8 @@ const getAllFromDB = async (filters: any, options: IOptions) => {
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }
         : {
-            createdAt: "desc",
-          },
+          createdAt: "desc",
+        },
     include: {
       doctor: {
         include: {
@@ -343,12 +343,10 @@ const cancelUnpaidAppointments = async () => {
 
     // Free up doctor schedules
     for (const unPaidAppointment of unPaidAppointments) {
-      await tnx.doctorSchedules.update({
+      await tnx.doctorSchedules.updateMany({
         where: {
-          doctorId_scheduleId: {
-            doctorId: unPaidAppointment.doctorId,
-            scheduleId: unPaidAppointment.scheduleId,
-          },
+          doctorId: unPaidAppointment.doctorId,
+          scheduleId: unPaidAppointment.scheduleId,
         },
         data: {
           isBooked: false,

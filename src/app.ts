@@ -32,13 +32,13 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-cron.schedule("*/5 * * * *", () => {
+cron.schedule("*/5 * * * *", async () => {
   try {
     console.log(
       "🔄 Running unpaid appointment cleanup at",
       new Date().toISOString(),
     );
-    AppointmentService.cancelUnpaidAppointments();
+    await AppointmentService.cancelUnpaidAppointments();
   } catch (err) {
     console.error("❌ Cron job error:", err);
   }
