@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { prisma } from "../../shared/prisma";
 import { IAuthUser } from "../../types/common";
 import { getStripe } from "../../helper/stripe";
@@ -34,7 +34,7 @@ const createAppointment = async (user: IAuthUser, payload: any) => {
     },
   });
 
-  const videoCallingId = uuidv4();
+  const videoCallingId = randomUUID();
 
   const result = await prisma.$transaction(async (tnx) => {
     const appointmentData = await tnx.appointment.create({
@@ -58,7 +58,7 @@ const createAppointment = async (user: IAuthUser, payload: any) => {
       },
     });
 
-    const transactionId = uuidv4();
+    const transactionId = randomUUID();
 
     const paymentData = await tnx.payment.create({
       data: {
@@ -147,37 +147,37 @@ const getMyAppointment = async (
     include:
       user?.role === UserRole.DOCTOR
         ? {
-            patient: true,
-            schedule: true,
-            prescription: true,
-            review: true,
-            payment: true,
-            doctor: {
-              include: {
-                doctorSpecialties: {
-                  include: {
-                    specialities: true,
-                  },
+          patient: true,
+          schedule: true,
+          prescription: true,
+          review: true,
+          payment: true,
+          doctor: {
+            include: {
+              doctorSpecialties: {
+                include: {
+                  specialities: true,
                 },
               },
             },
-          }
-        : {
-            doctor: {
-              include: {
-                doctorSpecialties: {
-                  include: {
-                    specialities: true,
-                  },
-                },
-              },
-            },
-            schedule: true,
-            prescription: true,
-            review: true,
-            payment: true,
-            patient: true,
           },
+        }
+        : {
+          doctor: {
+            include: {
+              doctorSpecialties: {
+                include: {
+                  specialities: true,
+                },
+              },
+            },
+          },
+          schedule: true,
+          prescription: true,
+          review: true,
+          payment: true,
+          patient: true,
+        },
   });
 
   const total = await prisma.appointment.count({
@@ -271,8 +271,8 @@ const getAllFromDB = async (filters: any, options: IOptions) => {
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }
         : {
-            createdAt: "desc",
-          },
+          createdAt: "desc",
+        },
     include: {
       doctor: {
         include: {
@@ -379,7 +379,7 @@ const createAppointmentWithPayLater = async (user: IAuthUser, payload: any) => {
     },
   });
 
-  const videoCallingId = uuidv4();
+  const videoCallingId = randomUUID();
 
   const result = await prisma.$transaction(async (tnx) => {
     const appointmentData = await tnx.appointment.create({
@@ -408,7 +408,7 @@ const createAppointmentWithPayLater = async (user: IAuthUser, payload: any) => {
       },
     });
 
-    const transactionId = uuidv4();
+    const transactionId = randomUUID();
 
     await tnx.payment.create({
       data: {
