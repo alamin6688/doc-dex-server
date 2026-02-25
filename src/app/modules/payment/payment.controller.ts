@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync";
 import { PaymentService } from "./payment.service";
 import sendResponse from "../../shared/sendResponse";
-import { stripe } from "../../helper/stripe";
+import { getStripe } from "../../helper/stripe";
 import config from "../../../config";
 
 const handleStripeWebhookEvent = catchAsync(
@@ -17,10 +17,16 @@ const handleStripeWebhookEvent = catchAsync(
 
     let event;
     try {
+      const stripe = getStripe();
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err: any) {
-      console.error("⚠️ Webhook signature verification failed:", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      console.error(
+        "⚠️ Webhook signature verification failed:",
+        err?.message || err,
+      );
+      return res
+        .status(400)
+        .send(`Webhook Error: ${err?.message || String(err)}`);
     }
 
     try {

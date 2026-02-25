@@ -32,17 +32,25 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-cron.schedule("*/5 * * * *", async () => {
-  try {
-    console.log(
-      "🔄 Running unpaid appointment cleanup at",
-      new Date().toISOString(),
-    );
-    await AppointmentService.cancelUnpaidAppointments();
-  } catch (err) {
-    console.error("❌ Cron job error:", err);
-  }
-});
+// Only schedule cron jobs when not running on Vercel serverless instances.
+// Vercel sets `VERCEL=1` in the environment for its runtime; skip cron there.
+if (!process.env.VERCEL) {
+  cron.schedule("*/5 * * * *", async () => {
+    try {
+      console.log(
+        "🔄 Running unpaid appointment cleanup at",
+        new Date().toISOString(),
+      );
+      await AppointmentService.cancelUnpaidAppointments();
+    } catch (err) {
+      console.error("❌ Cron job error:", err);
+    }
+  });
+} else {
+  console.log(
+    "Cron jobs disabled in serverless environment (VERCEL detected).",
+  );
+}
 
 app.get("/", (req: Request, res: Response) => {
   res.send({
