@@ -54,7 +54,7 @@ if (!process.env.VERCEL) {
 
 app.get("/", (req: Request, res: Response) => {
   res.send({
-    Message: "Doc Dex server...",
+    Message: "Doc Dex server is running...",
   });
 });
 
