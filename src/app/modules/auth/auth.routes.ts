@@ -24,9 +24,7 @@ router.post(
   "/reset-password",
   (req: Request, res: Response, next: NextFunction) => {
     //user is resetting password without token and logged in newly created admin or doctor
-    if (!req.headers.authorization && req.cookies.accessToken) {
-      console.log(req.headers.authorization, "from reset password route guard");
-      console.log(req.cookies.accessToken, "from reset password route guard");
+    if (!req.body.token && req.cookies.accessToken) {
       auth(
         UserRole.SUPER_ADMIN,
         UserRole.ADMIN,

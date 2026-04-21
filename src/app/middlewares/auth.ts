@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { jwtHelper } from "../helper/jwtHelper";
-import { env } from "process";
+import config from "../../config";
 import ApiError from "../errors/ApiError";
 import httpStatus from "http-status";
 
@@ -19,7 +19,7 @@ const auth = (...roles: string[]) => {
 
       const verifyUser = jwtHelper.verifyToken(
         token,
-        env.ACCESS_TOKEN_SECRET as string
+        config.jwt.access_token_secret as string
       );
 
       req.user = verifyUser;
