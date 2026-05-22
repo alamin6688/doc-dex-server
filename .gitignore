@@ -13,3 +13,4 @@ dist/
 uploads/*
 !uploads/gitkeep
 .10g
+*.json

@@ -1,25 +1,20 @@
 import nodemailer from "nodemailer";
 import config from "../../../config";
 
-const emailSender = async (email: string, html: string) => {
+const emailSender = async (email: string, html: string, subject: string = "Appointment Update") => {
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // Use `true` for port 465, `false` for all other ports
+    service: "gmail",
     auth: {
       user: config.emailSender.email,
-      pass: config.emailSender.app_pass, // app password
-    },
-    tls: {
-      rejectUnauthorized: false,
+      pass: config.emailSender.app_pass,
     },
   });
 
-  const info = await transporter.sendMail({
-    from: '"Fuade Hasan Alamin" <alamin.kzs06@gmail.com>',
+  await transporter.sendMail({
+    from: `"DocDex Support" <${config.emailSender.email}>`,
     to: email, 
-    subject: "Reset Password Link",
-    html, // html body
+    subject: subject,
+    html,
   });
 };
 
