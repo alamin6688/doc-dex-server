@@ -59,9 +59,9 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
 
       // 2. Update Database in Transaction
       console.log("🔄 Updating database records...");
-      await prisma.$transaction(async (tx) => {
-        const videoCallingId = meetLink || appointment.videoCallingId;
+      const videoCallingId = meetLink || `https://meet.jit.si/docdex-appointment-${appointmentId}`;
 
+      await prisma.$transaction(async (tx) => {
         await tx.appointment.update({
           where: { id: appointmentId },
           data: {
@@ -95,7 +95,7 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
       console.log(`🔍 Verification - App: ${updatedApp?.id}, Status: ${updatedApp?.paymentStatus}, Link: ${updatedApp?.videoCallingId}`);
 
       // 3. Send Emails (Outside transaction, async)
-      if (meetLink && session.payment_status === "paid") {
+      if (videoCallingId && session.payment_status === "paid") {
         const sendEmails = async () => {
           try {
             console.log("📧 Sending confirmation emails...");
@@ -107,8 +107,8 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
                 <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <p><strong>Doctor:</strong> Dr. ${appointment.doctor.name}</p>
                     <p><strong>Date & Time:</strong> ${new Date(appointment.schedule!.startDateTime).toLocaleString()}</p>
-                    <p style="margin-top: 15px;"><strong>Google Meet Link:</strong></p>
-                    <a href="${meetLink}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
+                    <p style="margin-top: 15px;"><strong>Video Consultation Link:</strong></p>
+                    <a href="${videoCallingId}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
                 </div>
                 <p>Best regards,<br>PH Health Care Team</p>
             </div>`;
@@ -121,8 +121,8 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
                 <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <p><strong>Patient:</strong> ${appointment.patient.name}</p>
                     <p><strong>Date & Time:</strong> ${new Date(appointment.schedule!.startDateTime).toLocaleString()}</p>
-                    <p style="margin-top: 15px;"><strong>Google Meet Link:</strong></p>
-                    <a href="${meetLink}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
+                    <p style="margin-top: 15px;"><strong>Video Consultation Link:</strong></p>
+                    <a href="${videoCallingId}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
                 </div>
                 <p>Best regards,<br>PH Health Care Team</p>
             </div>`;

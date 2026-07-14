@@ -549,7 +549,7 @@ const confirmPayment = async (sessionId: string) => {
         );
       }
 
-      const videoCallingId = meetLink || appointment.videoCallingId;
+      const videoCallingId = meetLink || `https://meet.jit.si/docdex-appointment-${appointmentId}`;
 
       await prisma.$transaction(async (tx) => {
         await tx.appointment.update({
@@ -569,7 +569,7 @@ const confirmPayment = async (sessionId: string) => {
         });
       });
 
-      if (meetLink) {
+      if (videoCallingId) {
         const sendEmails = async () => {
           try {
             const emailSender = require("../auth/emailSender").default;
@@ -581,8 +581,8 @@ const confirmPayment = async (sessionId: string) => {
                 <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <p><strong>Doctor:</strong> Dr. ${appointment.doctor.name}</p>
                     <p><strong>Date & Time:</strong> ${new Date(appointment.schedule!.startDateTime).toLocaleString()}</p>
-                    <p style="margin-top: 15px;"><strong>Google Meet Link:</strong></p>
-                    <a href="${meetLink}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
+                    <p style="margin-top: 15px;"><strong>Video Consultation Link:</strong></p>
+                    <a href="${videoCallingId}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
                 </div>
                 <p>Best regards,<br>PH Health Care Team</p>
             </div>`;
@@ -595,8 +595,8 @@ const confirmPayment = async (sessionId: string) => {
                 <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
                     <p><strong>Patient:</strong> ${appointment.patient.name}</p>
                     <p><strong>Date & Time:</strong> ${new Date(appointment.schedule!.startDateTime).toLocaleString()}</p>
-                    <p style="margin-top: 15px;"><strong>Google Meet Link:</strong></p>
-                    <a href="${meetLink}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
+                    <p style="margin-top: 15px;"><strong>Video Consultation Link:</strong></p>
+                    <a href="${videoCallingId}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
                 </div>
                 <p>Best regards,<br>PH Health Care Team</p>
             </div>`;
