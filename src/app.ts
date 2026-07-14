@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { PaymentController } from "./app/modules/payment/payment.controller";
 import cron from "node-cron";
 import { AppointmentService } from "./app/modules/appointment/appointment.service";
+import { ScheduleService } from "./app/modules/schedule/schedule.service";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -43,6 +44,12 @@ if (!process.env.VERCEL) {
         new Date().toISOString(),
       );
       await AppointmentService.cancelUnpaidAppointments();
+
+      console.log(
+        "🔄 Running passed schedules cleanup at",
+        new Date().toISOString(),
+      );
+      await ScheduleService.cleanUpPassedSchedules();
     } catch (err) {
       console.error("❌ Cron job error:", err);
     }

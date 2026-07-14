@@ -3,6 +3,7 @@ export type ISchedule = {
   endDate: string;
   startTime: string;
   endTime: string;
+  timezoneOffset?: string;
 };
 
 export type IFilterRequest = {

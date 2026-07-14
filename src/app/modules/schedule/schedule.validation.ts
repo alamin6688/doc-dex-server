@@ -6,6 +6,7 @@ const create = z.object({
         endDate: z.string(),
         startTime: z.string(),
         endTime: z.string(),
+        timezoneOffset: z.string().optional(),
     }),
 });
 

@@ -59,6 +59,15 @@ const getMySchedule = async (
         },
       ],
     });
+  } else {
+    // Default: only show future doctor schedules
+    andConditions.push({
+      schedule: {
+        endDateTime: {
+          gte: new Date(),
+        },
+      },
+    });
   }
 
   if (Object.keys(filterData).length > 0) {
@@ -183,6 +192,15 @@ const getAllFromDB = async (
       })),
     });
   }
+
+  // Always filter out past doctor schedules in public list
+  andConditions.push({
+    schedule: {
+      endDateTime: {
+        gte: new Date(),
+      },
+    },
+  });
 
   const whereConditions: any =
     andConditions.length > 0 ? { AND: andConditions } : {};

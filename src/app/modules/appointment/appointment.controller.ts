@@ -117,6 +117,18 @@ const initiatePayment = catchAsync(
   },
 );
 
+const confirmPayment = catchAsync(async (req: Request, res: Response) => {
+  const { sessionId } = req.body;
+  const result = await AppointmentService.confirmPayment(sessionId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
 export const AppointmentController = {
   createAppointment,
   getMyAppointment,
@@ -124,4 +136,5 @@ export const AppointmentController = {
   changeAppointmentStatus,
   createAppointmentWithPayLater,
   initiatePayment,
+  confirmPayment,
 };

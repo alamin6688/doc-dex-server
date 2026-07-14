@@ -60,4 +60,10 @@ router.post(
   AppointmentController.createAppointmentWithPayLater,
 );
 
+router.post(
+  "/confirm-payment",
+  auth(UserRole.PATIENT),
+  AppointmentController.confirmPayment,
+);
+
 export const AppointmentRoutes = router;

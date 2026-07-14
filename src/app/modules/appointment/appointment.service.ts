@@ -26,13 +26,23 @@ const createAppointment = async (user: IAuthUser, payload: any) => {
     },
   });
 
-  await prisma.doctorSchedules.findFirstOrThrow({
+  const doctorSchedule = await prisma.doctorSchedules.findFirstOrThrow({
     where: {
       doctorId: doctorData.id,
       scheduleId: payload.scheduleId,
       isBooked: false,
     },
+    include: {
+      schedule: true,
+    },
   });
+
+  if (new Date(doctorSchedule.schedule.startDateTime) < new Date()) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot book a slot that has already passed",
+    );
+  }
 
   const videoCallingId = randomUUID();
 
@@ -89,7 +99,7 @@ const createAppointment = async (user: IAuthUser, payload: any) => {
         appointmentId: appointmentData.id,
         paymentId: paymentData.id,
       },
-      success_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/payment/success`,
+      success_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/dashboard/my-appointments`,
     });
 
@@ -371,13 +381,23 @@ const createAppointmentWithPayLater = async (user: IAuthUser, payload: any) => {
     },
   });
 
-  await prisma.doctorSchedules.findFirstOrThrow({
+  const doctorSchedule = await prisma.doctorSchedules.findFirstOrThrow({
     where: {
       doctorId: doctorData.id,
       scheduleId: payload.scheduleId,
       isBooked: false,
     },
+    include: {
+      schedule: true,
+    },
   });
+
+  if (new Date(doctorSchedule.schedule.startDateTime) < new Date()) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot book a slot that has already passed",
+    );
+  }
 
   const videoCallingId = randomUUID();
 
@@ -489,11 +509,112 @@ const initiatePaymentForAppointment = async (
       paymentId: appointment.payment!.id,
     },
     // Navigate Links
-    success_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/payment/success`,
+    success_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.CLIENT_URL || "http://localhost:3000"}/dashboard/my-appointments`,
   });
 
   return { paymentUrl: session.url };
+};
+
+const confirmPayment = async (sessionId: string) => {
+  const stripe = getStripe();
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+  if (session.payment_status === "paid") {
+    const appointmentId = session.metadata?.appointmentId;
+    const paymentId = session.metadata?.paymentId;
+
+    if (!appointmentId || !paymentId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Missing metadata in session");
+    }
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { schedule: true, patient: true, doctor: true },
+    });
+
+    if (!appointment) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Appointment not found");
+    }
+
+    if (appointment.paymentStatus === PaymentStatus.UNPAID) {
+      const { generateGoogleMeetLink } = require("../../../helper/googleMeet");
+      let meetLink: string | null = null;
+      if (appointment.schedule) {
+        meetLink = await generateGoogleMeetLink(
+          `Consultation: ${appointment.patient.name} & Dr. ${appointment.doctor.name}`,
+          `Online Consultation Appointment`,
+          appointment.schedule.startDateTime,
+          appointment.schedule.endDateTime
+        );
+      }
+
+      const videoCallingId = meetLink || appointment.videoCallingId;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.appointment.update({
+          where: { id: appointmentId },
+          data: {
+            paymentStatus: PaymentStatus.PAID,
+            videoCallingId,
+          },
+        });
+
+        await tx.payment.update({
+          where: { id: paymentId },
+          data: {
+            status: PaymentStatus.PAID,
+            paymentGatewayData: session as any,
+          },
+        });
+      });
+
+      if (meetLink) {
+        const sendEmails = async () => {
+          try {
+            const emailSender = require("../auth/emailSender").default;
+            const patientHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="color: #4CAF50; text-align: center;">Appointment Confirmed! 🎉</h2>
+                <p>Hello <strong>${appointment.patient.name}</strong>,</p>
+                <p>Your payment was successful and your appointment has been confirmed.</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Doctor:</strong> Dr. ${appointment.doctor.name}</p>
+                    <p><strong>Date & Time:</strong> ${new Date(appointment.schedule!.startDateTime).toLocaleString()}</p>
+                    <p style="margin-top: 15px;"><strong>Google Meet Link:</strong></p>
+                    <a href="${meetLink}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
+                </div>
+                <p>Best regards,<br>PH Health Care Team</p>
+            </div>`;
+            
+            const doctorHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="color: #4CAF50; text-align: center;">New Appointment Confirmed! 📅</h2>
+                <p>Hello <strong>Dr. ${appointment.doctor.name}</strong>,</p>
+                <p>A patient has successfully booked and paid for an appointment with you.</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Patient:</strong> ${appointment.patient.name}</p>
+                    <p><strong>Date & Time:</strong> ${new Date(appointment.schedule!.startDateTime).toLocaleString()}</p>
+                    <p style="margin-top: 15px;"><strong>Google Meet Link:</strong></p>
+                    <a href="${meetLink}" style="display: inline-block; padding: 10px 15px; background-color: #4285F4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Video Consultation</a>
+                </div>
+                <p>Best regards,<br>PH Health Care Team</p>
+            </div>`;
+
+            await emailSender(appointment.patient.email, patientHtml, "Your Appointment is Confirmed!");
+            await emailSender(appointment.doctor.email, doctorHtml, "New Appointment Scheduled");
+          } catch (err) {
+            console.error("Email sending failed:", err);
+          }
+        };
+        sendEmails().catch(console.error);
+      }
+    }
+
+    return { success: true, message: "Payment confirmed successfully" };
+  }
+
+  return { success: false, message: "Payment not completed yet" };
 };
 
 export const AppointmentService = {
@@ -504,4 +625,5 @@ export const AppointmentService = {
   cancelUnpaidAppointments,
   createAppointmentWithPayLater,
   initiatePaymentForAppointment,
+  confirmPayment,
 };
